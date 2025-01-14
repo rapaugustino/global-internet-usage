@@ -1,0 +1,33 @@
+/*  assets/styles.css  */
+
+/* A global body style if you want a different background for dark theme:
+body {
+  background-color: beige;
+}
+
+
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #FFD700;
+  margin-bottom: 1rem;
+}
+
+
+.lead-text {
+  font-size: 1.1rem;
+  color: #f8f9fa;
+  line-height: 1.6;
+}
+
+
+.card:hover {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Example: smaller text for footnotes, disclaimers, etc.
+.small-text {
+  font-size: 0.85rem;
+  color: #aaaaaa;
+} */
+
