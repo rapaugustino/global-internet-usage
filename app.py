@@ -1,7 +1,14 @@
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
-import plotly.express as px
 import dash_bootstrap_components as dbc
+import plotly.express as px
+
+# ------------------------------------------------------------------------------
+# GLOBAL SETTINGS FOR PLOTLY
+# ------------------------------------------------------------------------------
+# This sets the default template to "ggplot2" for all figures
+px.defaults.template = "ggplot2"
+px.defaults.color_continuous_scale = px.colors.sequential.Viridis
 
 
 # ------------------------------------------------------------------------------
@@ -9,18 +16,17 @@ import dash_bootstrap_components as dbc
 # ------------------------------------------------------------------------------
 def load_data():
     """
-    Load and clean the internet usage dataset.
-    - Replaces weird string patterns (multiple dots, etc.) with numeric-friendly text.
-    - Converts to float.
-    - Drops rows that remain NaN after conversion.
+    Load and clean the internet usage dataset:
+      - Replaces weird string patterns (multiple dots, etc.) with numeric-friendly text
+      - Converts to float
+      - Drops rows that remain NaN
     """
-    # Read your CSV file
     data = pd.read_csv("data/internet_usage.csv")
 
     # Identify columns for years 2000-2023
     year_cols = [str(y) for y in range(2000, 2024)]
 
-    # Melt the wide data into long format
+    # Melt wide data into long format
     df_melted = pd.melt(
         data,
         id_vars=["Country Name", "Country Code"],
@@ -32,16 +38,13 @@ def load_data():
     # Convert 'Year' to numeric
     df_melted["Year"] = pd.to_numeric(df_melted["Year"], errors="coerce")
 
-    # Clean 'Internet Usage (%)'
+    # Clean 'Internet Usage (%)' (remove non-digit/dot chars)
     df_melted["Internet Usage (%)"] = df_melted["Internet Usage (%)"].astype(str)
     df_melted["Internet Usage (%)"] = df_melted["Internet Usage (%)"].replace(
-        r"[^0-9\.]+",
-        "",
-        regex=True
+        r"[^0-9\.]+", "", regex=True
     )
     df_melted["Internet Usage (%)"] = pd.to_numeric(
-        df_melted["Internet Usage (%)"],
-        errors="coerce"
+        df_melted["Internet Usage (%)"], errors="coerce"
     )
     df_melted.dropna(subset=["Internet Usage (%)"], inplace=True)
 
@@ -51,11 +54,11 @@ def load_data():
 df = load_data()
 
 # ------------------------------------------------------------------------------
-# 2. INITIALIZE THE DASH APP
+# 2. INITIALIZE THE DASH APP (FLATLY THEME)
 # ------------------------------------------------------------------------------
 app = Dash(
     __name__,
-    external_stylesheets=[dbc.themes.FLATLY]  # Try CYBORG, LUMEN, etc. for different looks
+    external_stylesheets=[dbc.themes.FLATLY]  # A polished, modern light theme
 )
 app.config.suppress_callback_exceptions = True
 server = app.server
@@ -66,7 +69,7 @@ server = app.server
 navbar = dbc.Navbar(
     dbc.Container(
         [
-            dbc.NavbarBrand("Global Internet Usage Dashboard", className="fw-bold"),
+            dbc.NavbarBrand("Global Internet Usage Dashboard"),
             dbc.Nav(
                 [
                     dbc.NavItem(dbc.NavLink("Home", href="/", active="exact")),
@@ -81,7 +84,7 @@ navbar = dbc.Navbar(
     ),
     color="primary",
     dark=True,
-    className="mb-3"
+    className="mb-4"
 )
 
 
@@ -89,13 +92,13 @@ navbar = dbc.Navbar(
 # 4. PAGE LAYOUTS
 # ------------------------------------------------------------------------------
 #
-# 4.1 HOME PAGE (MERGED WITH GLOBAL TRENDS)
+# 4.1 HOME PAGE (GLOBAL TRENDS)
 # ------------------------------------------------------------------------------
 def home_page():
     """
-    Shows:
-    - Hero-style header with key stats
-    - Global Trends chart (line chart) right below
+    Displays:
+    - A Hero-like header with key stats for the latest year
+    - Global Trends with a range slider
     """
     latest_year = int(df["Year"].max())
     df_latest = df[df["Year"] == latest_year]
@@ -106,7 +109,7 @@ def home_page():
     min_year = int(df["Year"].min())
     max_year = int(df["Year"].max())
 
-    # Hero-style section
+    # Hero-like stats section
     hero_section = dbc.Container(
         [
             dbc.Row(
@@ -114,29 +117,26 @@ def home_page():
                     dbc.Col(
                         html.Div(
                             [
-                                html.H1(
-                                    "Global Internet Usage: 2000–2023",
-                                    className="text-primary fw-bold mb-4"
-                                ),
+                                html.H1("Global Internet Usage: 2000–2023", className="mb-3"),
                                 html.P(
-                                    "Explore how the world has gone online over the past two decades. "
-                                    "Scroll down to see interactive charts, or use the navigation links above "
-                                    "for deeper analysis.",
+                                    "Explore how internet adoption has grown over the years. "
+                                    "Use the slider below to filter the global trend chart, or use "
+                                    "the navigation bar for more detailed analyses.",
                                     className="lead"
-                                ),
+                                )
                             ]
                         ),
                         md=12
                     )
                 ],
-                className="mb-4"
+                className="py-4"
             ),
             dbc.Row(
                 [
                     dbc.Col(
                         dbc.Card(
                             [
-                                dbc.CardHeader("Global Average", className="fw-bold"),
+                                dbc.CardHeader("Global Average"),
                                 dbc.CardBody(
                                     [
                                         html.H3(f"{avg_internet}%", className="card-title"),
@@ -144,14 +144,14 @@ def home_page():
                                     ]
                                 )
                             ],
-                            className="mb-4 shadow"
+                            className="mb-3 shadow"
                         ),
                         md=4
                     ),
                     dbc.Col(
                         dbc.Card(
                             [
-                                dbc.CardHeader("Top Country", className="fw-bold"),
+                                dbc.CardHeader("Top Country"),
                                 dbc.CardBody(
                                     [
                                         html.H3(top_country["Country Name"], className="card-title"),
@@ -159,14 +159,14 @@ def home_page():
                                     ]
                                 )
                             ],
-                            className="mb-4 shadow"
+                            className="mb-3 shadow"
                         ),
                         md=4
                     ),
                     dbc.Col(
                         dbc.Card(
                             [
-                                dbc.CardHeader("Lowest Country", className="fw-bold"),
+                                dbc.CardHeader("Lowest Country"),
                                 dbc.CardBody(
                                     [
                                         html.H3(bottom_country["Country Name"], className="card-title"),
@@ -174,25 +174,21 @@ def home_page():
                                     ]
                                 )
                             ],
-                            className="mb-4 shadow"
+                            className="mb-3 shadow"
                         ),
                         md=4
                     ),
                 ]
-            ),
+            )
         ],
         fluid=True,
-        className="py-4 bg-light rounded-3"
+        className="mb-4"
     )
 
-    # Global Trends section
-    global_trend_section = dbc.Container(
+    # Global trends section
+    trends_section = dbc.Container(
         [
-            html.H2("Global Trends Over Time", className="mt-4 mb-4 text-center fw-bold"),
-            html.P(
-                "Select a range of years to see how the global average internet usage has changed.",
-                className="text-center mb-3"
-            ),
+            html.H2("Global Trends Over Time", className="text-center mb-3"),
             dcc.RangeSlider(
                 id="global-year-range",
                 min=min_year,
@@ -201,18 +197,14 @@ def home_page():
                 value=[min_year, max_year],
                 marks={y: str(y) for y in range(min_year, max_year + 1, 3)},
                 allowCross=False,
+                className="mb-3"
             ),
-            dcc.Graph(id="global-trend-graph", className="my-4")
+            dcc.Graph(id="global-trend-graph", style={"height": "500px"})
         ],
         fluid=True
     )
 
-    return html.Div(
-        [
-            hero_section,
-            global_trend_section
-        ]
-    )
+    return html.Div([hero_section, trends_section])
 
 
 @app.callback(
@@ -228,9 +220,7 @@ def update_global_trends(range_value):
         global_avg,
         x="Year",
         y="Internet Usage (%)",
-        title="Global Average Internet Usage",
-        markers=True,
-        labels={"Internet Usage (%)": "Avg Usage (%)"}
+        title="Global Average Internet Usage"
     )
     fig.update_layout(transition_duration=500)
     return fig
@@ -243,18 +233,18 @@ def country_analysis_page():
     countries_sorted = sorted(df["Country Name"].unique().tolist())
     layout = dbc.Container(
         [
-            html.H2("Country Analysis", className="mb-4 fw-bold"),
+            html.H2("Country Analysis", className="mb-4"),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.Label("Select a Country:", className="fw-bold"),
+                            html.Label("Select a Country:"),
                             dcc.Dropdown(
                                 id="country-dropdown",
                                 options=[{"label": c, "value": c} for c in countries_sorted],
-                                value="United States",  # default
-                                clearable=False,
-                            ),
+                                value="United States",
+                                clearable=False
+                            )
                         ],
                         md=4
                     )
@@ -263,8 +253,8 @@ def country_analysis_page():
             ),
             dbc.Row(
                 [
-                    dbc.Col(dcc.Graph(id="country-trend"), md=6),
-                    dbc.Col(dcc.Graph(id="country-global-comparison"), md=6),
+                    dbc.Col(dcc.Graph(id="country-trend", style={"height": "450px"}), md=6),
+                    dbc.Col(dcc.Graph(id="country-global-comparison", style={"height": "450px"}), md=6),
                 ]
             )
         ],
@@ -296,8 +286,8 @@ def update_country_analysis(selected_country):
         global_avg,
         x="Year",
         y="Internet Usage (%)",
-        markers=True,
-        title="Comparison: Country vs Global Avg"
+        title="Comparison: Country vs Global Avg",
+        markers=True
     )
     # Add the selected country
     fig2.add_trace(px.line(country_data, x="Year", y="Internet Usage (%)").data[0])
@@ -319,24 +309,24 @@ def compare_countries_page():
 
     layout = dbc.Container(
         [
-            html.H2("Compare Multiple Countries", className="mb-4 fw-bold"),
+            html.H2("Compare Multiple Countries", className="mb-4"),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.Label("Select Countries:", className="fw-bold"),
+                            html.Label("Select Countries:"),
                             dcc.Dropdown(
                                 id="multi-country-dropdown",
                                 options=[{"label": c, "value": c} for c in countries_sorted],
                                 value=["United States", "China"],
-                                multi=True,
-                            ),
+                                multi=True
+                            )
                         ],
                         md=6
                     ),
                     dbc.Col(
                         [
-                            html.Label("Select Year Range:", className="fw-bold"),
+                            html.Label("Select Year Range:"),
                             dcc.RangeSlider(
                                 id="compare-year-range",
                                 min=min_year,
@@ -345,18 +335,14 @@ def compare_countries_page():
                                 value=[2000, max_year],
                                 marks={y: str(y) for y in range(min_year, max_year + 1, 3)},
                                 allowCross=False,
-                            ),
+                            )
                         ],
                         md=6
-                    ),
+                    )
                 ],
                 className="mb-4"
             ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(id="multi-country-comparison-graph"), md=12)
-                ]
-            )
+            dcc.Graph(id="multi-country-comparison-graph", style={"height": "500px"})
         ],
         fluid=True
     )
@@ -379,7 +365,7 @@ def update_compare_countries(selected_countries, year_range):
         y="Internet Usage (%)",
         color="Country Name",
         markers=True,
-        title="Internet Usage Comparison of Selected Countries"
+        title="Internet Usage Comparison"
     )
     fig.update_layout(transition_duration=500)
     return fig
@@ -392,18 +378,18 @@ def country_ranking_page():
     all_years = sorted(df["Year"].unique().tolist())
     layout = dbc.Container(
         [
-            html.H2("Country Ranking", className="mb-4 fw-bold"),
+            html.H2("Country Ranking", className="mb-4"),
             dbc.Row(
                 [
                     dbc.Col(
                         [
-                            html.Label("Select Year:", className="fw-bold"),
+                            html.Label("Select Year:"),
                             dcc.Dropdown(
                                 id="ranking-year-dropdown",
                                 options=[{"label": str(y), "value": y} for y in all_years],
                                 value=all_years[-1],
-                                clearable=False,
-                            ),
+                                clearable=False
+                            )
                         ],
                         md=4
                     )
@@ -412,8 +398,8 @@ def country_ranking_page():
             ),
             dbc.Row(
                 [
-                    dbc.Col(dcc.Graph(id="top10-bar"), md=6),
-                    dbc.Col(dcc.Graph(id="bottom10-bar"), md=6),
+                    dbc.Col(dcc.Graph(id="top10-bar", style={"height": "450px"}), md=6),
+                    dbc.Col(dcc.Graph(id="bottom10-bar", style={"height": "450px"}), md=6),
                 ]
             )
         ],
@@ -440,10 +426,9 @@ def update_country_ranking(selected_year):
         y="Country Name",
         orientation="h",
         color="Internet Usage (%)",
-        color_continuous_scale="Blues",
         title=f"Top 10 in {int(selected_year)}"
     )
-    fig_top.update_layout(yaxis={"categoryorder": "total ascending"}, transition_duration=500)
+    fig_top.update_layout(yaxis={"categoryorder": "total ascending"}, transition_duration=500, hovermode="x unified", template="ggplot2")
 
     fig_bottom = px.bar(
         bottom10,
@@ -451,10 +436,9 @@ def update_country_ranking(selected_year):
         y="Country Name",
         orientation="h",
         color="Internet Usage (%)",
-        color_continuous_scale="Reds",
         title=f"Bottom 10 in {int(selected_year)}"
     )
-    fig_bottom.update_layout(yaxis={"categoryorder": "total ascending"}, transition_duration=500)
+    fig_bottom.update_layout(yaxis={"categoryorder": "total ascending"}, transition_duration=500, hovermode="x unified", template="ggplot2")
 
     return fig_top, fig_bottom
 
@@ -464,10 +448,11 @@ def update_country_ranking(selected_year):
 # ------------------------------------------------------------------------------
 def regional_insights_page():
     """
-    Displays an animated choropleth figure inline (no callback needed),
-    and a separate bubble map that DOES have a dropdown for color scale.
+    Displays:
+      - an animated choropleth (no callback needed)
+      - a bubble map controlled by a dropdown for color scale
     """
-    # Build the animated choropleth figure inline
+    # Animated choropleth
     dff_for_map = df.rename(columns={"Country Code": "iso_alpha"})
     animated_fig = px.choropleth(
         dff_for_map,
@@ -475,31 +460,20 @@ def regional_insights_page():
         color="Internet Usage (%)",
         hover_name="Country Name",
         animation_frame="Year",
-        color_continuous_scale=px.colors.sequential.Plasma,
-        range_color=[0, 100],  # Usage typically 0-100
-        labels={"Internet Usage (%)": "Internet Usage (%)"},
-        projection="natural earth",
+        range_color=[0, 100],
         title="Animated Internet Usage Over Time (2000–2023)"
     )
-    animated_fig.update_layout(
-        margin={"r": 0, "t": 50, "l": 0, "b": 0},
-        transition_duration=500
-    )
+    animated_fig.update_layout(margin={"r": 0, "t": 50, "l": 0, "b": 0}, transition_duration=500)
 
     layout = dbc.Container(
         [
-            html.H2("Regional Insights", className="mb-4 fw-bold"),
+            html.H2("Regional Insights", className="mb-4"),
             html.P(
                 "Below is an animated global map showing internet usage from 2000 to 2023. "
                 "Press the play button to see usage evolve year by year.",
                 className="mb-4"
             ),
-            # Show the animated figure
-            dcc.Graph(
-                id="animated-choropleth",
-                figure=animated_fig,  # inline figure, so no callback needed
-                className="mb-4"
-            ),
+            dcc.Graph(id="animated-choropleth", figure=animated_fig, style={"height": "600px"}),
 
             html.Hr(),
 
@@ -511,11 +485,11 @@ def regional_insights_page():
             dcc.Dropdown(
                 id="bubble-color-scale",
                 options=[{"label": scale, "value": scale} for scale in px.colors.named_colorscales()],
-                value="Plasma",
+                value="Viridis",
                 clearable=False,
                 className="mb-3"
             ),
-            dcc.Graph(id="bubble-map")
+            dcc.Graph(id="bubble-map", style={"height": "550px"})
         ],
         fluid=True
     )
@@ -540,10 +514,7 @@ def update_bubble_map(chosen_scale):
         projection="natural earth",
         title=f"Bubble Map of Internet Usage in {int(latest_year)}"
     )
-    fig.update_layout(
-        margin={"r": 0, "t": 50, "l": 0, "b": 0},
-        transition_duration=500
-    )
+    fig.update_layout(margin={"r": 0, "t": 50, "l": 0, "b": 0}, transition_duration=500)
     return fig
 
 
@@ -556,7 +527,7 @@ footer = dbc.Container(
         dbc.Row(
             dbc.Col(
                 html.P(
-                    "© 2025 Global Internet Usage Dashboard — All Rights Reserved",
+                    "© 2025 Global Internet Usage Dashboard",
                     className="text-center text-muted"
                 ),
                 md=12
@@ -573,7 +544,7 @@ app.layout = html.Div(
     [
         dcc.Location(id="url", refresh=False),
         navbar,
-        html.Div(id="page-content", className="mb-5"),  # main content
+        html.Div(id="page-content", className="mb-5"),
         footer
     ]
 )
@@ -584,10 +555,6 @@ app.layout = html.Div(
 # ------------------------------------------------------------------------------
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def display_page(pathname):
-    """
-    Decide which page layout to render based on the URL.
-    'home_page' merges the old home + global trends.
-    """
     if pathname == "/country-analysis":
         return country_analysis_page()
     elif pathname == "/compare-countries":
@@ -597,7 +564,7 @@ def display_page(pathname):
     elif pathname == "/regional-insights":
         return regional_insights_page()
     else:
-        # Default is Home page
+        # Default is Home
         return home_page()
 
 
@@ -605,4 +572,4 @@ def display_page(pathname):
 # 8. MAIN BLOCK
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)
