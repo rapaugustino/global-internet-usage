@@ -7,7 +7,7 @@ import plotly.express as px
 # GLOBAL DEFAULTS
 # ------------------------------------------------------------------------------
 # More vibrant color template & palette
-px.defaults.template = "ggplot2"
+px.defaults.template = "plotly"
 px.defaults.color_continuous_scale = px.colors.sequential.Sunset  # For better contrast
 
 
